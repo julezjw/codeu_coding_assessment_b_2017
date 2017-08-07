@@ -46,8 +46,8 @@ public final class MyTokenReader implements TokenReader {
   @Override
   public Token next() throws IOException {
 	  
-		// if we have reached the end, return null 
-		if (source.length() - currentIndex < 0) {
+		// if source is empty, return null 
+		if (!(source.length() - currentIndex > 0)) {
 			return null;
 		}
 		
@@ -56,20 +56,27 @@ public final class MyTokenReader implements TokenReader {
 			currentIndex++;
 		}
 		
-		
 		// looks at the next token in source 
 		String next = nextToken(); 
 		
+		// ignores any empty tokens 
+		if (next.length() == 0) {
+			return next();
+		}
+		// token has starts with a digit, return a number token 
 		if (isNumber(next)) {
 			return new NumberToken(Double.parseDouble(next));
 		}
-		if (isName(next)) {
-			return new NameToken(next);
-		}
+		// if it is +-=; return a symbol token 
 		if (isSymbol(next)) {
 			return new SymbolToken(next.charAt(0));
 		}
-		//if it is not any of the above, it must be a string 
+		// if it is a name keyword OR if it is a variable name of length 1, 
+		// return a name token 
+		if (isName(next) || next.length() == 1) {
+			return new NameToken(next);
+		}
+		//if it is not any of the above, it must be a string so return string token
 		return new StringToken(next);
   }
   
@@ -81,9 +88,9 @@ public final class MyTokenReader implements TokenReader {
 		String next = "";
 		
 		// if it is a string starts with " 
-		// return the string until the next " 
+		// return the substring until the next " 
 		if (source.charAt(currentIndex) == '"'){
-			
+			currentIndex++; 
 			// while the string has not ended, continue adding to next string 
 			while (source.length() - currentIndex > 0 &&  
 					source.charAt(currentIndex) != '\n' &&
@@ -94,25 +101,25 @@ public final class MyTokenReader implements TokenReader {
 		} 
 		
 		// if the string is not encased in quotes, 
-		// return the string up to the next space 
+		// return the string up to the next space or symbol token
 		else {
 			while (source.length() - currentIndex > 0 &&  
 					source.charAt(currentIndex) != '\n' &&
 					source.charAt(currentIndex) != ' ') {
 				// if the character is a symbol but there is already input in next, 
 				// return next 
-				if (isSymbol(source.substring(currentIndex, currentIndex + 1)) && !next.isEmpty()){
+				if (isSymbol(Character.toString(source.charAt(currentIndex))) && !next.isEmpty()){
 					return next; 
 				}
-				else if (isSymbol(source.substring(currentIndex, currentIndex + 1)) && next.isEmpty()){
-					currentIndex++;
-					return source.substring(currentIndex, currentIndex + 1); 
+				// otherwise, just return the symbol
+				else if (isSymbol(Character.toString(source.charAt(currentIndex))) && next.isEmpty()){
+					next += source.charAt(currentIndex);
+					break;
 				}
+			next += source.charAt(currentIndex);
+			currentIndex++;
 			}
-				next += source.charAt(currentIndex);
-				currentIndex++;
 		}		
-		
 		currentIndex++; 
 		return next; 
   }
@@ -126,8 +133,9 @@ public final class MyTokenReader implements TokenReader {
 	  return (Character.isDigit(str.charAt(0))); 
   }
   
-  private boolean isSymbol(String str){ 
-	  return (str.equals('=') || str.equals('+') || str.equals('-') || str.equals(';'));
+  private boolean isSymbol(String str){
+	  char sym = str.charAt(0);
+	  return (sym == '=' || sym == '+' || sym == '-' || sym == ';');
   }
 
 }
